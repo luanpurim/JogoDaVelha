@@ -64,8 +64,8 @@ start:
     
     MOV AH,1
     MOV AL,1
-    LEA SI,LETRA_A 
-    CALL ESCREVE_DISPLAY_GRAFICO
+    LEA SI,CIRCULO 
+    CALL WRITE_CHARACTER
     
     ;wait for any key....
     mov ah, 1
@@ -74,28 +74,34 @@ start:
     mov ax, 4c00h ; exit to operating system.
     int 21h
 
-ESCREVE_DISPLAY_GRAFICO:
+WRITE_CHARACTER: ; escreve um caracter na linha e coluna apontada. AH = coluna, AL = linha
     PUSH AX
-    MOV BL,20
-    MUL BL
-    MOV BL,8
-    MUL BL
-    ; AX = A L*BL = 1*40
-    ; DI APONTARA PARA O OFFSET
-    MOV DI,AX
-    POP AX
-    MOV AL,0
+    MOV BL, 8 ; altura da linha
+    MUL BL 
+    MOV BL, 40 ;quantidade de offsets que uma linha tem
+    MUL BL           
+    ; linha * 8 * 40 = offset da linha
+    
+    ; AX = AL * BL
+    
+    MOV DI,AX ; DI apontara para o offset do display grafico
+    POP AX ; recupera a coluna
+    MOV AL,0 ; a coluna esta em AH entao eh necessario zerar o AL.....
+    XCHG AH,AL ; para inverter e obter o valor de AH em AX  
+    
+    ADD DI, AX ; soma a coluna passada. Cada offset eh uma coluna
+    
+write: ; desenha o caracter no segmento grafico
+    MOV AX, [SI] ; SI contem qual o offset inicial do caracter a ser desenhado
+    CMP AX, "$"
+    JE sai
     XCHG AH,AL
-    ADD DI,AX
-ESCREVE:
-    MOV AL, [SI]
-    CMP AL, "$"
-    JE SAI
-    MOV ES:[DI],AL
-    ADD DI,40
-    INC SI
-    JMP ESCREVE
-SAI:
+    MOV ES:[DI], AX
+    ADD DI, 40
+    ADD SI, 2
+    JMP write
+sai:
+
 RET
 
 
